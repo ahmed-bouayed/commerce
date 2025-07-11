@@ -1,11 +1,12 @@
 'use client';
 
+import { getProduct } from 'lib/local'; // Re-add getProduct import
 import type {
   Cart,
   CartItem,
   Product,
   ProductVariant
-} from 'lib/shopify/types';
+} from 'lib/types';
 import React, {
   createContext,
   use,
@@ -27,7 +28,7 @@ type CartAction =
     };
 
 type CartContextType = {
-  cartPromise: Promise<Cart | undefined>;
+  cartPromise: Promise<any | undefined>;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -74,7 +75,7 @@ function createOrUpdateCartItem(
   const totalAmount = calculateItemCost(quantity, variant.price.amount);
 
   return {
-    id: existingItem?.id,
+    id: existingItem?.id || Math.random().toString(36).substring(2, 15), // Generate a mock ID if new
     quantity,
     cost: {
       totalAmount: {
@@ -86,12 +87,7 @@ function createOrUpdateCartItem(
       id: variant.id,
       title: variant.title,
       selectedOptions: variant.selectedOptions,
-      product: {
-        id: product.id,
-        handle: product.handle,
-        title: product.title,
-        featuredImage: product.featuredImage
-      }
+      product: product // Use the full product object
     }
   };
 }
@@ -118,7 +114,7 @@ function updateCartTotals(
 
 function createEmptyCart(): Cart {
   return {
-    id: undefined,
+    id: 'mock-cart-id', // Assign a mock ID
     checkoutUrl: '',
     totalQuantity: 0,
     lines: [],
@@ -137,7 +133,7 @@ function cartReducer(state: Cart | undefined, action: CartAction): Cart {
     case 'UPDATE_ITEM': {
       const { merchandiseId, updateType } = action.payload;
       const updatedLines = currentCart.lines
-        .map((item) =>
+        .map((item: CartItem) =>
           item.merchandise.id === merchandiseId
             ? updateCartItem(item, updateType)
             : item
@@ -195,7 +191,7 @@ export function CartProvider({
   cartPromise
 }: {
   children: React.ReactNode;
-  cartPromise: Promise<Cart | undefined>;
+  cartPromise: Promise<any | undefined>;
 }) {
   return (
     <CartContext.Provider value={{ cartPromise }}>
@@ -223,8 +219,13 @@ export function useCart() {
     });
   };
 
-  const addCartItem = (variant: ProductVariant, product: Product) => {
-    updateOptimisticCart({ type: 'ADD_ITEM', payload: { variant, product } });
+  const addCartItem = async (variant: ProductVariant, productHandle: string) => {
+    const fullProduct = await getProduct(productHandle);
+    if (!fullProduct) {
+      console.error('Product not found for handle:', productHandle);
+      return;
+    }
+    updateOptimisticCart({ type: 'ADD_ITEM', payload: { variant, product: fullProduct } });
   };
 
   return useMemo(

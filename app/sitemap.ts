@@ -1,5 +1,4 @@
-import { getCollections, getPages, getProducts } from 'lib/shopify';
-import { baseUrl, validateEnvironmentVariables } from 'lib/utils';
+import { getCollectionProducts, getCollections, getPages } from 'lib/local';
 import { MetadataRoute } from 'next';
 
 type Route = {
@@ -7,34 +6,42 @@ type Route = {
   lastModified: string;
 };
 
+// Mock baseUrl since it's not exported from lib/utils
+const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
+  ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+  : 'http://localhost:3000';
+
+// Mock getProducts function using getCollectionProducts
+async function getProducts(): Promise<any[]> {
+  return getCollectionProducts({ collection: 'all' });
+}
+
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  validateEnvironmentVariables();
-
   const routesMap = [''].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString()
   }));
 
   const collectionsPromise = getCollections().then((collections) =>
-    collections.map((collection) => ({
-      url: `${baseUrl}${collection.path}`,
-      lastModified: collection.updatedAt
+    collections.map((collection: any) => ({
+      url: `${baseUrl}/search/${collection.handle}`,
+      lastModified: new Date().toISOString() // Using current date as updatedAt is not in mock
     }))
   );
 
-  const productsPromise = getProducts({}).then((products) =>
-    products.map((product) => ({
+  const productsPromise = getProducts().then((products) =>
+    products.map((product: any) => ({
       url: `${baseUrl}/product/${product.handle}`,
-      lastModified: product.updatedAt
+      lastModified: new Date().toISOString() // Using current date as updatedAt is not in mock
     }))
   );
 
   const pagesPromise = getPages().then((pages) =>
-    pages.map((page) => ({
+    pages.map((page: any) => ({
       url: `${baseUrl}/${page.handle}`,
-      lastModified: page.updatedAt
+      lastModified: new Date().toISOString() // Using current date as updatedAt is not in mock
     }))
   );
 

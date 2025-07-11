@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import { useProduct, useUpdateURL } from 'components/product/product-context';
-import { ProductOption, ProductVariant } from 'lib/shopify/types';
+import { ProductOption, ProductVariant } from 'lib/types';
 
 type Combination = {
   id: string;
@@ -14,8 +14,8 @@ export function VariantSelector({
   options,
   variants
 }: {
-  options: ProductOption[];
-  variants: ProductVariant[];
+  options: any[];
+  variants: any[];
 }) {
   const { state, updateOption } = useProduct();
   const updateURL = useUpdateURL();
@@ -30,7 +30,7 @@ export function VariantSelector({
     id: variant.id,
     availableForSale: variant.availableForSale,
     ...variant.selectedOptions.reduce(
-      (accumulator, option) => ({ ...accumulator, [option.name.toLowerCase()]: option.value }),
+      (accumulator: any, option: any) => ({ ...accumulator, [option.name.toLowerCase()]: option.value }),
       {}
     )
   }));
@@ -40,7 +40,7 @@ export function VariantSelector({
       <dl className="mb-8">
         <dt className="mb-4 text-sm uppercase tracking-wide">{option.name}</dt>
         <dd className="flex flex-wrap gap-3">
-          {option.values.map((value) => {
+          {option.values.map((value: any) => {
             const optionNameLowerCase = option.name.toLowerCase();
 
             // Base option params on current selectedOptions so we can preserve any other param state.
